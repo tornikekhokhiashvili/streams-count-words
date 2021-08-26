@@ -1,4 +1,4 @@
-package com.efimchick.ifmo.streams.countwords;
+package com.epam.rd.autotasks;
 
 
 import java.util.List;
