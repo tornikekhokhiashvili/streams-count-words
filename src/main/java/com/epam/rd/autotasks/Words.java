@@ -1,39 +1,30 @@
 package com.epam.rd.autotasks;
-
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Words {
-
     public String countWords(List<String> lines) {
-//        Map<String, Integer> wordCounts = new HashMap<>();
-
-        // Split lines into words and create a list of words to count
-        Map<String, Long> wordCounts = lines.stream()
-                .flatMap(line -> Arrays.stream(line.split("\\s+")))
-                .map(word -> word.replaceAll("[^a-zA-Zа-яА-Я]", "").toLowerCase())
+        Map<String, Integer> wordCounts = lines.stream()
+                .flatMap(line -> Pattern.compile("[ .,‘’(“—/:?!”;*)'\"-]|\\s+")
+                        .splitAsStream(line))
+                .map(String::toLowerCase)
                 .filter(word -> word.length() >= 4)
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+                .collect(Collectors.toMap(word -> word, word -> 1, Integer::sum));
 
-//        // Count word occurrences
-//        wordsToCount.forEach(word -> wordCounts.put(word, wordCounts.getOrDefault(word, 0) + 1));
+        wordCounts.entrySet().removeIf(stringIntegerEntry -> stringIntegerEntry.getValue() < 10);
 
-        // Filter out words with frequency less than 10
-        Map<String, Long> filteredWordCounts = wordCounts.entrySet().stream()
-                .filter(entry -> entry.getValue() >= 10)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        List<Map.Entry<String, Integer>> sortedEntries = wordCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+                .collect(Collectors.toList());
 
-        // Sort the word counts by amount and then alphabetically
-        List<Map.Entry<String, Long>> sortedWordCounts = new ArrayList<>(filteredWordCounts.entrySet());
-        sortedWordCounts.sort(Comparator.comparing(Map.Entry<String, Long>::getValue).reversed().thenComparing(Map.Entry::getKey));
 
-        String statistics = sortedWordCounts.stream()
-                .map(entry -> entry.getKey() + " - " + entry.getValue())
-                .reduce((a, b) -> a + "\n" + b)
-                .orElse("");
-
-        return statistics;
+        return sortedEntries.stream()
+                .map(entry -> {
+                    String entryString = entry.getKey() + " - " + entry.getValue();
+                    wordCounts.put(entry.getKey(), entry.getValue());
+                    return entryString;
+                })
+                .collect(Collectors.joining("\n"));
     }
 }
